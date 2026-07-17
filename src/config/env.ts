@@ -65,12 +65,12 @@ function readEnvironment(): TestEnvironment {
 export const env = {
   environment: readEnvironment(),
   urls: {
-    baseUrl: readString('BASE_URL', 'https://rahulshettyacademy.com/client'),
-    apiBaseUrl: readString('API_BASE_URL', 'https://rahulshettyacademy.com/api/ecom')
+    baseUrl: readString('BASE_URL', 'https://www.saucedemo.com'),
+    apiBaseUrl: readString('API_BASE_URL', 'https://www.saucedemo.com')
   },
   credentials: {
-    username: readString('TEST_USERNAME', ''),
-    password: readString('TEST_PASSWORD', '')
+    username: readString('TEST_USERNAME', 'standard_user'),
+    password: readString('TEST_PASSWORD', 'secret_sauce')
   },
   execution: {
     headless: readBoolean('HEADLESS', true),

@@ -29,22 +29,26 @@ npm run test:reference
 or:
 
 ```bash
-npm run test:cmd -- --grep @reference
+npm run test:cmd -- --grep=@reference
 ```
 
 ## Run In Portal Mode
 
-Portal mode currently uses the same Playwright execution path, but sets `PORTAL_MODE=true` and writes reporter events to:
+Portal mode currently uses the runner to set `PORTAL_MODE=true`, pass execution parameters, and write reporter events to:
 
 ```text
 artifacts/realtime/events.jsonl
 ```
 
 ```bash
-npm run test:portal -- --grep @reference
+npm run test:portal -- --grep=@reference
 ```
 
-Later, the runner agent will call the same script with an execution ID, selected browser, environment, branch, and commit.
+The backend/control plane can call the runner with an execution ID, selected browser, environment, and other parameters:
+
+```bash
+node runner/run-tests.cjs --portal --execution-id=run-123 --env=qa --grep=@reference --project=chromium
+```
 
 ## Replace With Your Application
 

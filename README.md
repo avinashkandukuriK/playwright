@@ -37,6 +37,8 @@ src/
   reporters/           custom reporter for portal-ready events
   types/               shared execution contracts
 
+runner/                parameterized execution entry points for backend/portal runs
+
 tests/e2e/
   reference/           runnable SauceDemo sample specs
 
@@ -72,7 +74,8 @@ Useful commands:
 ```bash
 npm run test:reference
 npm run test:cmd
-npm run test:portal -- --grep @reference
+npm run test:runner -- --grep=@reference --project=chromium
+npm run test:portal -- --grep=@reference
 npm run test:smoke
 npm run test:web
 npm run test:api
@@ -110,6 +113,12 @@ Every new test should answer:
 - Does failure mean product defect, environment issue, test issue, or infrastructure issue?
 
 ## Portal Readiness
+
+Manual Playwright execution remains first-class for local development. Portal/backend execution should go through the runner:
+
+```bash
+node runner/run-tests.cjs --portal --execution-id=run-123 --grep=@reference --project=chromium
+```
 
 The custom reporter writes JSONL events to:
 

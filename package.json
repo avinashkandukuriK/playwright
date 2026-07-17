@@ -10,7 +10,8 @@
   "scripts": {
     "test": "playwright test --config playwright.config.ts",
     "test:cmd": "playwright test --config playwright.config.ts",
-    "test:portal": "PORTAL_MODE=true playwright test --config playwright.config.ts",
+    "test:runner": "node runner/run-tests.cjs",
+    "test:portal": "node runner/run-tests.cjs --portal",
     "test:reference": "playwright test --config playwright.config.ts tests/e2e/reference",
     "test:smoke": "playwright test --config playwright.config.ts --grep @smoke",
     "test:regression": "playwright test --config playwright.config.ts --grep @regression",
