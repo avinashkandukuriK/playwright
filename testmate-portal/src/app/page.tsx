@@ -2,15 +2,17 @@
 
 import {
   Activity,
+  Boxes,
   CheckCircle2,
   CircleAlert,
   Clock3,
   Copy,
+  FileJson,
   GitBranch,
   MonitorPlay,
   Play,
-  Server,
   Settings2,
+  ShieldCheck,
   TerminalSquare,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -18,58 +20,80 @@ import { useMemo, useState } from "react";
 const projects = ["chromium", "firefox", "webkit", "mobile-chrome"];
 const environments = ["qa", "uat", "stage", "prod"];
 
+const navigation = [
+  { label: "Dashboard", active: true },
+  { label: "Executions", active: false },
+  { label: "Test Suites", active: false },
+  { label: "Environments", active: false },
+  { label: "Artifacts", active: false },
+  { label: "Settings", active: false },
+];
+
 const timeline = [
   {
-    label: "Execution accepted",
-    detail: "Request normalized and execution id assigned",
+    label: "Request received",
+    detail: "Portal normalized the execution request payload",
     status: "complete",
     time: "00:00",
   },
   {
-    label: "Runner prepared",
-    detail: "Environment variables and Playwright args resolved",
+    label: "Runner command resolved",
+    detail: "Environment, project, workers, grep, and headless flags prepared",
     status: "complete",
     time: "00:03",
   },
   {
-    label: "Tests running",
-    detail: "Reporter events streaming from framework artifacts",
+    label: "Reporter stream attached",
+    detail: "Portal event channel points to framework JSONL output",
     status: "active",
     time: "01:18",
   },
   {
-    label: "Artifacts pending",
-    detail: "HTML report, JSON results, traces, and event log",
+    label: "Artifact collection",
+    detail: "HTML report, JSON results, traces, screenshots, and videos",
     status: "pending",
     time: "--:--",
   },
 ];
 
-const recentRuns = [
+const executionHistory = [
   {
     id: "runner-full",
-    suite: "@reference",
+    trigger: "Portal validation",
+    env: "qa",
     project: "all projects",
+    suite: "@reference",
+    status: "Finished",
     result: "Passed",
     tests: "12 / 12",
-    duration: "1.3m",
   },
   {
     id: "runner-smoke",
-    suite: "@reference",
+    trigger: "Runner smoke",
+    env: "qa",
     project: "chromium",
+    suite: "@reference",
+    status: "Finished",
     result: "Passed",
     tests: "3 / 3",
-    duration: "1.2m",
   },
   {
     id: "local-dev",
-    suite: "@smoke",
+    trigger: "Manual request",
+    env: "qa",
     project: "chromium",
+    suite: "@smoke",
+    status: "Staged",
     result: "Ready",
     tests: "queued",
-    duration: "--",
   },
+];
+
+const artifactChannels = [
+  { label: "Realtime Events", path: "artifacts/realtime/events.jsonl" },
+  { label: "JSON Results", path: "artifacts/results/results.json" },
+  { label: "HTML Report", path: "artifacts/playwright-report" },
+  { label: "Trace Output", path: "artifacts/test-results" },
 ];
 
 export default function Home() {
@@ -94,7 +118,9 @@ export default function Home() {
       await navigator.clipboard.writeText(runnerCommand);
       setRequestStatus("Runner command copied.");
     } catch {
-      setRequestStatus("Clipboard permission blocked. Command preview is ready to select.");
+      setRequestStatus(
+        "Clipboard permission blocked. Command preview is ready to select."
+      );
     }
 
     setCopied(true);
@@ -103,13 +129,15 @@ export default function Home() {
 
   function stageExecution() {
     setRequestStatus(
-      `Execution ${executionId} staged for ${environment} with ${project === "all" ? "all projects" : project}.`
+      `Execution ${executionId} staged for ${environment} with ${
+        project === "all" ? "all projects" : project
+      }.`
     );
   }
 
   return (
     <main className="min-h-screen bg-[#f6f7f9] text-[#18202a]">
-      <div className="border-b border-[#d9dee7] bg-white">
+      <header className="border-b border-[#d9dee7] bg-white">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-md bg-[#14213d] text-white">
@@ -117,29 +145,45 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-lg font-semibold leading-6">TestMate Portal</h1>
-              <p className="text-sm text-[#647084]">Execution control plane</p>
+              <p className="text-sm text-[#647084]">
+                Execution control plane for Playwright automation
+              </p>
             </div>
           </div>
           <div className="hidden items-center gap-2 text-sm text-[#647084] sm:flex">
             <GitBranch size={16} aria-hidden="true" />
-            <span>framework linked</span>
+            <span>Git deployment enabled</span>
           </div>
         </div>
-      </div>
+
+        <nav className="mx-auto flex w-full max-w-7xl gap-1 overflow-x-auto px-6 pb-3">
+          {navigation.map((item) => (
+            <button
+              key={item.label}
+              className={`h-9 shrink-0 rounded-md px-3 text-sm font-medium transition ${
+                item.active
+                  ? "bg-[#14213d] text-white"
+                  : "text-[#526176] hover:bg-[#eef2f7] hover:text-[#18202a]"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </header>
 
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 px-6 py-6 xl:grid-cols-[360px_1fr]">
         <aside className="space-y-6">
           <section className="rounded-lg border border-[#d9dee7] bg-white">
-            <div className="flex items-center gap-2 border-b border-[#e6e9ef] px-4 py-3">
-              <Settings2 size={17} aria-hidden="true" />
-              <h2 className="text-sm font-semibold">Execution Request</h2>
-            </div>
+            <SectionHeader
+              icon={<Settings2 size={17} />}
+              title="Runner Request"
+              subtitle="Parameters sent to the framework runner"
+            />
 
             <div className="space-y-4 p-4">
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wide text-[#647084]">
-                  Execution ID
-                </span>
+                <FieldLabel>Execution ID</FieldLabel>
                 <input
                   value={executionId}
                   onChange={(event) => setExecutionId(event.target.value)}
@@ -149,9 +193,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs font-medium uppercase tracking-wide text-[#647084]">
-                    Env
-                  </span>
+                  <FieldLabel>Environment</FieldLabel>
                   <select
                     value={environment}
                     onChange={(event) => setEnvironment(event.target.value)}
@@ -164,9 +206,7 @@ export default function Home() {
                 </label>
 
                 <label className="block">
-                  <span className="text-xs font-medium uppercase tracking-wide text-[#647084]">
-                    Project
-                  </span>
+                  <FieldLabel>Browser Project</FieldLabel>
                   <select
                     value={project}
                     onChange={(event) => setProject(event.target.value)}
@@ -181,9 +221,7 @@ export default function Home() {
               </div>
 
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wide text-[#647084]">
-                  Grep
-                </span>
+                <FieldLabel>Suite Filter</FieldLabel>
                 <input
                   value={grep}
                   onChange={(event) => setGrep(event.target.value)}
@@ -192,9 +230,7 @@ export default function Home() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wide text-[#647084]">
-                  Workers
-                </span>
+                <FieldLabel>Parallel Workers</FieldLabel>
                 <input
                   type="number"
                   min={1}
@@ -206,7 +242,7 @@ export default function Home() {
               </label>
 
               <label className="flex items-center justify-between rounded-md border border-[#d9dee7] px-3 py-2 text-sm">
-                <span>Headless browser</span>
+                <span>Headless Browser</span>
                 <input
                   type="checkbox"
                   checked={headless}
@@ -220,7 +256,7 @@ export default function Home() {
                 className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#2f6f73] px-4 text-sm font-semibold text-white transition hover:bg-[#285f63]"
               >
                 <Play size={16} aria-hidden="true" />
-                Queue Execution
+                Stage Execution Request
               </button>
 
               <div className="rounded-md border border-[#d9dee7] bg-[#f8fafc] px-3 py-2 text-sm text-[#3b4656]">
@@ -230,10 +266,12 @@ export default function Home() {
           </section>
 
           <section className="rounded-lg border border-[#d9dee7] bg-[#18202a] text-white">
-            <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-              <TerminalSquare size={17} aria-hidden="true" />
-              <h2 className="text-sm font-semibold">Runner Command</h2>
-            </div>
+            <SectionHeader
+              icon={<TerminalSquare size={17} />}
+              title="Runner Command"
+              subtitle="Backend-safe command contract"
+              dark
+            />
             <div className="p-4">
               <pre className="max-h-44 overflow-auto whitespace-pre-wrap break-words rounded-md bg-black/25 p-3 font-mono text-xs leading-5 text-[#dbe7e9]">
                 {runnerCommand}
@@ -250,46 +288,84 @@ export default function Home() {
         </aside>
 
         <section className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Metric label="Last run" value="12 passed" icon={<CheckCircle2 size={18} />} tone="green" />
-            <Metric label="Active project" value={project === "all" ? "matrix" : project} icon={<Activity size={18} />} tone="blue" />
-            <Metric label="Event sink" value="JSONL ready" icon={<Server size={18} />} tone="amber" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <Metric
+              label="Execution Status"
+              value="Ready"
+              icon={<ShieldCheck size={18} />}
+              tone="green"
+            />
+            <Metric
+              label="Selected Project"
+              value={project === "all" ? "matrix" : project}
+              icon={<Activity size={18} />}
+              tone="blue"
+            />
+            <Metric
+              label="Event Reporter"
+              value="JSONL"
+              icon={<FileJson size={18} />}
+              tone="amber"
+            />
+            <Metric
+              label="Framework Runner"
+              value="linked"
+              icon={<Boxes size={18} />}
+              tone="slate"
+            />
           </div>
 
           <section className="rounded-lg border border-[#d9dee7] bg-white">
             <div className="flex flex-col gap-3 border-b border-[#e6e9ef] px-4 py-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-base font-semibold">Live Execution</h2>
-                <p className="text-sm text-[#647084]">runner-full · portal mode · SauceDemo reference</p>
+                <h2 className="text-base font-semibold">Execution Overview</h2>
+                <p className="text-sm text-[#647084]">
+                  {executionId} · {environment} · {grep} ·{" "}
+                  {project === "all" ? "browser matrix" : project}
+                </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-[#e8f4ef] px-3 py-1 text-sm font-medium text-[#20724f]">
                 <CheckCircle2 size={15} aria-hidden="true" />
-                healthy
+                request ready
               </span>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
               <div className="border-b border-[#e6e9ef] p-4 lg:border-b-0 lg:border-r">
+                <h3 className="mb-4 text-sm font-semibold">Execution Lifecycle</h3>
                 <div className="space-y-4">
                   {timeline.map((item) => (
-                    <div key={item.label} className="grid grid-cols-[28px_1fr_auto] gap-3">
+                    <div
+                      key={item.label}
+                      className="grid grid-cols-[28px_1fr_auto] gap-3"
+                    >
                       <StatusDot status={item.status} />
                       <div>
                         <div className="text-sm font-semibold">{item.label}</div>
                         <div className="text-sm text-[#647084]">{item.detail}</div>
                       </div>
-                      <div className="font-mono text-xs text-[#647084]">{item.time}</div>
+                      <div className="font-mono text-xs text-[#647084]">
+                        {item.time}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="p-4">
-                <h3 className="text-sm font-semibold">Artifacts</h3>
+                <h3 className="text-sm font-semibold">Artifact Channels</h3>
                 <div className="mt-3 space-y-2 text-sm">
-                  {["artifacts/realtime/events.jsonl", "artifacts/results/results.json", "artifacts/playwright-report", "artifacts/test-results"].map((item) => (
-                    <div key={item} className="rounded-md border border-[#e1e5ec] px-3 py-2 font-mono text-xs text-[#3b4656]">
-                      {item}
+                  {artifactChannels.map((item) => (
+                    <div
+                      key={item.path}
+                      className="rounded-md border border-[#e1e5ec] px-3 py-2"
+                    >
+                      <div className="text-xs font-semibold uppercase tracking-wide text-[#647084]">
+                        {item.label}
+                      </div>
+                      <div className="mt-1 font-mono text-xs text-[#3b4656]">
+                        {item.path}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -299,31 +375,42 @@ export default function Home() {
 
           <section className="rounded-lg border border-[#d9dee7] bg-white">
             <div className="border-b border-[#e6e9ef] px-4 py-3">
-              <h2 className="text-base font-semibold">Recent Runs</h2>
+              <h2 className="text-base font-semibold">Execution History</h2>
+              <p className="mt-1 text-sm text-[#647084]">
+                Runs shown here reflect the current framework validation baseline.
+              </p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[860px] border-collapse text-left text-sm">
                 <thead className="bg-[#f8fafc] text-xs uppercase tracking-wide text-[#647084]">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Execution</th>
-                    <th className="px-4 py-3 font-semibold">Suite</th>
-                    <th className="px-4 py-3 font-semibold">Project</th>
+                    <th className="px-4 py-3 font-semibold">Run ID</th>
+                    <th className="px-4 py-3 font-semibold">Trigger</th>
+                    <th className="px-4 py-3 font-semibold">Environment</th>
+                    <th className="px-4 py-3 font-semibold">Browser Project</th>
+                    <th className="px-4 py-3 font-semibold">Suite Filter</th>
                     <th className="px-4 py-3 font-semibold">Tests</th>
-                    <th className="px-4 py-3 font-semibold">Duration</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Result</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentRuns.map((run) => (
+                  {executionHistory.map((run) => (
                     <tr key={run.id} className="border-t border-[#edf0f5]">
                       <td className="px-4 py-3 font-mono text-xs">{run.id}</td>
-                      <td className="px-4 py-3">{run.suite}</td>
+                      <td className="px-4 py-3">{run.trigger}</td>
+                      <td className="px-4 py-3">{run.env}</td>
                       <td className="px-4 py-3">{run.project}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{run.suite}</td>
                       <td className="px-4 py-3">{run.tests}</td>
-                      <td className="px-4 py-3">{run.duration}</td>
+                      <td className="px-4 py-3">{run.status}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 rounded-md bg-[#f1f5f9] px-2 py-1 text-xs font-medium">
-                          {run.result === "Passed" ? <CheckCircle2 size={13} className="text-[#20724f]" /> : <Clock3 size={13} className="text-[#9b6a16]" />}
+                          {run.result === "Passed" ? (
+                            <CheckCircle2 size={13} className="text-[#20724f]" />
+                          ) : (
+                            <Clock3 size={13} className="text-[#9b6a16]" />
+                          )}
                           {run.result}
                         </span>
                       </td>
@@ -339,6 +426,42 @@ export default function Home() {
   );
 }
 
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+  dark,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  dark?: boolean;
+}) {
+  return (
+    <div
+      className={`border-b px-4 py-3 ${
+        dark ? "border-white/10" : "border-[#e6e9ef]"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {icon}
+        <h2 className="text-sm font-semibold">{title}</h2>
+      </div>
+      <p className={`mt-1 text-xs ${dark ? "text-white/60" : "text-[#647084]"}`}>
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-xs font-medium uppercase tracking-wide text-[#647084]">
+      {children}
+    </span>
+  );
+}
+
 function Metric({
   label,
   value,
@@ -348,12 +471,13 @@ function Metric({
   label: string;
   value: string;
   icon: React.ReactNode;
-  tone: "green" | "blue" | "amber";
+  tone: "green" | "blue" | "amber" | "slate";
 }) {
   const tones = {
     green: "bg-[#e8f4ef] text-[#20724f]",
     blue: "bg-[#e9f0fb] text-[#285f9d]",
     amber: "bg-[#fff4dd] text-[#9b6a16]",
+    slate: "bg-[#edf1f5] text-[#3b4656]",
   };
 
   return (
