@@ -80,6 +80,9 @@ export default function Home() {
   const [workers, setWorkers] = useState(2);
   const [headless, setHeadless] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [requestStatus, setRequestStatus] = useState(
+    "Ready to stage a runner request."
+  );
 
   const runnerCommand = useMemo(() => {
     const projectArg = project === "all" ? "" : ` --project=${project}`;
@@ -87,9 +90,21 @@ export default function Home() {
   }, [environment, executionId, grep, headless, project, workers]);
 
   async function copyCommand() {
-    await navigator.clipboard.writeText(runnerCommand);
+    try {
+      await navigator.clipboard.writeText(runnerCommand);
+      setRequestStatus("Runner command copied.");
+    } catch {
+      setRequestStatus("Clipboard permission blocked. Command preview is ready to select.");
+    }
+
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  function stageExecution() {
+    setRequestStatus(
+      `Execution ${executionId} staged for ${environment} with ${project === "all" ? "all projects" : project}.`
+    );
   }
 
   return (
@@ -200,10 +215,17 @@ export default function Home() {
                 />
               </label>
 
-              <button className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#2f6f73] px-4 text-sm font-semibold text-white transition hover:bg-[#285f63]">
+              <button
+                onClick={stageExecution}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#2f6f73] px-4 text-sm font-semibold text-white transition hover:bg-[#285f63]"
+              >
                 <Play size={16} aria-hidden="true" />
                 Queue Execution
               </button>
+
+              <div className="rounded-md border border-[#d9dee7] bg-[#f8fafc] px-3 py-2 text-sm text-[#3b4656]">
+                {requestStatus}
+              </div>
             </div>
           </section>
 
