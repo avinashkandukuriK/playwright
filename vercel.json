@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "testmate-portal/.next",
+  "installCommand": "npm --prefix testmate-portal ci",
+  "framework": "nextjs"
+}
