@@ -90,10 +90,43 @@ const executionHistory = [
 ];
 
 const artifactChannels = [
-  { label: "Realtime Events", path: "artifacts/realtime/events.jsonl" },
-  { label: "JSON Results", path: "artifacts/results/results.json" },
-  { label: "HTML Report", path: "artifacts/playwright-report" },
-  { label: "Trace Output", path: "artifacts/test-results" },
+  {
+    label: "Realtime Events",
+    path: "artifacts/realtime/events.jsonl",
+    source: "portal reporter",
+  },
+  {
+    label: "JSON Results",
+    path: "artifacts/results/results.json",
+    source: "Playwright JSON reporter",
+  },
+  {
+    label: "HTML Report",
+    path: "artifacts/playwright-report",
+    source: "Playwright HTML reporter",
+  },
+  {
+    label: "Trace Output",
+    path: "artifacts/test-results",
+    source: "traces, screenshots, videos",
+  },
+];
+
+const reportInputs = [
+  { label: "Execution Runs", source: "events.jsonl", status: "ready" },
+  { label: "Failure Categories", source: "events.jsonl", status: "ready" },
+  { label: "Browser Matrix", source: "results.json", status: "ready" },
+  { label: "Pass Rate Trend", source: "results history", status: "next" },
+  { label: "Duration Trend", source: "results history", status: "next" },
+  { label: "Flaky Candidates", source: "multi-run history", status: "later" },
+];
+
+const failureCategories = [
+  "TEST_FAILURE",
+  "CONFIGURATION_FAILURE",
+  "ENVIRONMENT_FAILURE",
+  "INFRASTRUCTURE_FAILURE",
+  "UNKNOWN_FAILURE",
 ];
 
 export default function Home() {
@@ -320,7 +353,7 @@ export default function Home() {
               <div>
                 <h2 className="text-base font-semibold">Execution Overview</h2>
                 <p className="text-sm text-[#647084]">
-                  {executionId} · {environment} · {grep} ·{" "}
+                  {executionId} - {environment} - {grep} -{" "}
                   {project === "all" ? "browser matrix" : project}
                 </p>
               </div>
@@ -366,12 +399,63 @@ export default function Home() {
                       <div className="mt-1 font-mono text-xs text-[#3b4656]">
                         {item.path}
                       </div>
+                      <div className="mt-1 text-xs text-[#647084]">
+                        {item.source}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </section>
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section className="rounded-lg border border-[#d9dee7] bg-white">
+              <div className="border-b border-[#e6e9ef] px-4 py-3">
+                <h2 className="text-base font-semibold">Report Inputs</h2>
+                <p className="mt-1 text-sm text-[#647084]">
+                  Dashboard sections are mapped to framework artifacts first.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+                {reportInputs.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-md border border-[#e1e5ec] px-3 py-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-semibold">{item.label}</div>
+                      <span className="rounded-md bg-[#f1f5f9] px-2 py-1 text-xs font-medium text-[#3b4656]">
+                        {item.status}
+                      </span>
+                    </div>
+                    <div className="mt-1 font-mono text-xs text-[#647084]">
+                      {item.source}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-[#d9dee7] bg-white">
+              <div className="border-b border-[#e6e9ef] px-4 py-3">
+                <h2 className="text-base font-semibold">Failure Categories</h2>
+                <p className="mt-1 text-sm text-[#647084]">
+                  Reporter classifications available to the portal today.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+                {failureCategories.map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-md border border-[#e1e5ec] px-3 py-2 font-mono text-xs text-[#3b4656]"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
 
           <section className="rounded-lg border border-[#d9dee7] bg-white">
             <div className="border-b border-[#e6e9ef] px-4 py-3">
