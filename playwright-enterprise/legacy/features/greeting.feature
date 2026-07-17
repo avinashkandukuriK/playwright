@@ -12,11 +12,6 @@ Feature: Greeting
           | anshika@gmail.com | Iamking@000   |
 
 
-
-
-
-
-
 		Scenario Outline: Say bye
 		Given a login to Ecommerce2 application with "<username>" and "<password>"
 		Then Verify Error message is displayed
